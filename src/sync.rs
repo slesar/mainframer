@@ -1,6 +1,5 @@
 use config::Config;
 use ignore::Ignore;
-use std::any::Any;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
@@ -47,14 +46,14 @@ fn sync_local_to_remote(local_dir_absolute_path: &Path, config: &Config, ignore:
     execute_rsync(&mut command)
 }
 
-pub fn sync_remote_to_local(local_dir_absolute_path: &Path, config: &Config, ignore: &Ignore, sync_mode: &SyncMode, remote_command_finished_signal: &Receiver<Any>) -> Receiver<Result<(), String>> {
+pub fn sync_remote_to_local(local_dir_absolute_path: &Path, config: &Config, ignore: &Ignore, sync_mode: &SyncMode, remote_command_finished_signal: &Receiver<()>) -> Receiver<Result<(), String>> {
     match sync_mode {
-        SyncMode::Serial => sync_local_to_remote_serial(local_dir_absolute_path, config, ignore, remote_command_finished_signal),
-        SyncMode::Parallel(pause_between_sync) => sync_local_to_remote_parallel(local_dir_absolute_path, config, ignore, pause_between_sync, remote_command_finished_signal)
+        SyncMode::Serial => sync_remote_to_local_serial(local_dir_absolute_path, config, ignore, remote_command_finished_signal),
+        SyncMode::Parallel(pause_between_sync) => sync_remote_to_local_parallel(local_dir_absolute_path, config, ignore, pause_between_sync, remote_command_finished_signal)
     }
 }
 
-fn sync_remote_to_local_serial(local_dir_absolute_path: &Path, config: &Config, ignore: &Ignore, remote_command_finished_signal: &Receiver<Any>) -> Receiver<Result<(), String>> {
+fn sync_remote_to_local_serial(local_dir_absolute_path: &Path, config: &Config, ignore: &Ignore, remote_command_finished_signal: &Receiver<()>) -> Receiver<Result<(), String>> {
     let (sync_finished_tx, sync_finished_rx) = mpsc::channel();
 
     thread::spawn(move || {
@@ -63,7 +62,7 @@ fn sync_remote_to_local_serial(local_dir_absolute_path: &Path, config: &Config, 
             Ok(_) => {
                 match _sync_remote_to_local(local_dir_absolute_path, config, ignore) {
                     Err(message) => sync_finished_tx.send(Ok(Err(message))),
-                    Ok(_) => sync_finished_tx.send(Ok(()))
+                    Ok(_) => sync_finished_tx.send(Ok(Ok(())))
                 }
             }
         }
@@ -72,7 +71,7 @@ fn sync_remote_to_local_serial(local_dir_absolute_path: &Path, config: &Config, 
     return sync_finished_rx;
 }
 
-fn sync_remote_to_local_parallel(local_dir_absolute_path: &Path, config: &Config, ignore: &Ignore, pause_between_sync: &Duration, remote_command_finished_signal: &Receiver<Any>) -> Receiver<Result<(), String>> {
+fn sync_remote_to_local_parallel(local_dir_absolute_path: &Path, config: &Config, ignore: &Ignore, pause_between_sync: &Duration, remote_command_finished_signal: &Receiver<()>) -> Receiver<Result<(), String>> {
     let (sync_finished_tx, sync_finished_rx) = mpsc::channel();
 
     thread::spawn(move || {
