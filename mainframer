@@ -21,15 +21,28 @@ echo ""
 
 START_TIME="$(date +%s)"
 
+# Chooses either a file from mainframer local configuration or project dir
+function getConfigFile {
+	local localDir=$1
+	local repoDir=$2
+	local fileName=$3
+	if [ -f "$localDir/$fileName" ]; then
+		printf "%s/%s" ${localDir} ${fileName}
+	else
+		printf "${repoDir}/%s" ${fileName}
+	fi
+}
+
 PROJECT_DIR="$(pwd)"
 PROJECT_DIR_NAME="$( basename "$PROJECT_DIR" )"
 PROJECT_DIR_ON_REMOTE_MACHINE="~/mainframer/$PROJECT_DIR_NAME"
+PROJECT_DIR_LOCAL_CONFIG="$(realpath ~/.mainframer/$PROJECT_DIR_NAME)"
 
 CONFIG_DIR="$PROJECT_DIR/.mainframer"
-CONFIG_FILE="$CONFIG_DIR/config"
-COMMON_IGNORE_FILE="$CONFIG_DIR/ignore"
-LOCAL_IGNORE_FILE="$CONFIG_DIR/localignore"
-REMOTE_IGNORE_FILE="$CONFIG_DIR/remoteignore"
+CONFIG_FILE="$(getConfigFile "$PROJECT_DIR_LOCAL_CONFIG" "$CONFIG_DIR" "config")"
+COMMON_IGNORE_FILE="$(getConfigFile "$PROJECT_DIR_LOCAL_CONFIG" "$CONFIG_DIR" "ignore")"
+LOCAL_IGNORE_FILE="$(getConfigFile "$PROJECT_DIR_LOCAL_CONFIG" "$CONFIG_DIR" "localignore")"
+REMOTE_IGNORE_FILE="$(getConfigFile "$PROJECT_DIR_LOCAL_CONFIG" "$CONFIG_DIR" "remoteignore")"
 
 function readConfigProperty {
 	grep "^${1}=" "$CONFIG_FILE" | cut -d'=' -f2
