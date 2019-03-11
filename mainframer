@@ -33,10 +33,12 @@ function getConfigFile {
 	fi
 }
 
+USER_DIR="$(eval echo ~$NEW_USER)"
+
 PROJECT_DIR="$(pwd)"
 PROJECT_DIR_NAME="$( basename "$PROJECT_DIR" )"
 PROJECT_DIR_ON_REMOTE_MACHINE="~/mainframer/$PROJECT_DIR_NAME"
-PROJECT_DIR_LOCAL_CONFIG="$(realpath ~/.mainframer/$PROJECT_DIR_NAME)"
+PROJECT_DIR_LOCAL_CONFIG="$USER_DIR/.mainframer/$PROJECT_DIR_NAME"
 
 CONFIG_DIR="$PROJECT_DIR/.mainframer"
 CONFIG_FILE="$(getConfigFile "$PROJECT_DIR_LOCAL_CONFIG" "$CONFIG_DIR" "config")"
